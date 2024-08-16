@@ -1,3 +1,5 @@
+#THE MAIN VOTING SCRIPT
+
 import cx_Oracle
 from hashlib import scrypt
 from time import sleep
@@ -7,22 +9,26 @@ from os import name as os_name, system as os_system
 
 username = 'election_admin'
 password = '1234'
-salt = 'some string'
+with open('salt.txt', 'r') as saltFile:
+	salt = saltFile.read()
 
 #Functions
 
-def voterCheckQuery(hashkey):
+def voterCheckQuery(hashkey, connection):
+	cursor = connection.cursor()
 	#TODO: implement
-	#return True, 'You can vote here'
+	return True, 'You can vote here'
 	#return False, 'This is not your tally center'
-	return False, 'You have voted already'
+	#return False, 'You have voted already'
 	#...
 
-def voteQuery(hashkey, vote):
+def voteQuery(hashkey, vote, connection):
+	cursor = connection.cursor()
 	pass
 	#TODO: implement
 
-def checkVoteInDbQuery(hashkey, vote):
+def checkVoteInDbQuery(hashkey, vote, connection):
+	cursor = connection.cursor()
 	#TODO: implement
 	return True
 
@@ -46,7 +52,6 @@ centerNumber = input("Enter the tally center number: ")
 with cx_Oracle.connect(user=username, password=password, 
 	dsn='localhost/xe') as connection:
 
-	cursor = connection.cursor()
 
 	#Main loop
 	while True:
