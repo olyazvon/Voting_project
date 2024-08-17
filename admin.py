@@ -25,11 +25,6 @@ def checkId():
 	while (not voterID.isdigit) or len(voterID) != 9:
 		voterID = input("ID must consist of 9 digits. Try again: ")
 	return(voterID)
-# def getVotersToBd(Voters,voterCenter,conection):
-# 	for voter in Voters:
-# 		hashkey=scrypt((voter).encode(),
-# 				  salt=salt.encode(), n=16384, r=8, p=1)
-# 		addVoterQuery(hashkey,voterCenter,conection)
 
 def addVoterQuery(hashkey, center, connection):
 	cursor = connection.cursor()
@@ -52,20 +47,12 @@ def showStatistics(center):
 
 
 print('Welcome to admin utility for voting!')
-# Voters1 = ["AlexIvanov123456789", "MaryPetrova234567890", "IvanSmirnov345678901", "OlgaKuznetzova456789012","DmitriyVolkov567890123"]
-# Voters2 = ["ElenaFedorova678901234", "AndreyPopov789012345", "AnnVasilieva890123456", "MihailMorozov901234567","TatianaSergeeva"]
-# Voters3 = ["VladimirLebedev213456789", "IrinaSidorova324567890", "SergeyGrigoriev435678901", "NataliaBelova546789012","UriTihonov657890123"]
 
 centerNumber = int(input('Input the tally center number: '))
 
 with cx_Oracle.connect(user=username, password=password, 
 	dsn='localhost/xe') as connection:
 	print('Connection success')
-
-	# getVotersToBd(Voters1,1,connection)
-	# getVotersToBd(Voters2, 2, connection)
-	# getVotersToBd(Voters3, 3, connection)
-
 
 	action = ''
 	while action != '3':
