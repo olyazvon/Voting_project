@@ -22,9 +22,8 @@ def getNewVoter():
 
 def checkId():
 	voterID = input("Voter ID: ")
-	while  not voterID.isdigit or len(voterID)!=9:
-		print(" id должно состоять из 9 цифр")
-		voterID = input("Voter ID: ")
+	while (not voterID.isdigit) or len(voterID) != 9:
+		voterID = input("ID must consist of 9 digits. Try again: ")
 	return(voterID)
 
 def addVoterQuery(hashkey, center, connection):
@@ -36,13 +35,15 @@ def addVoterQuery(hashkey, center, connection):
 	connection.commit()
 
 def showStatistics(center):
-	votedVoters, allVoters = 0, 0
-	r, d = 0, 0
-	print(f'Current results in the center No. {center}:')
+	cursor = connection.cursor()
+	cursor.execute('''SELECT COUNT(*), COUNT(vote) FROM Voters''')
+	allVoters, votedVoters = cursor.fetchone()
+	cursor.execute('''SELECT SUM(vote) FROM Voters''')
+	rVotes, dVotes = divmod(cursor.fetchone()[0], 100000000)
+	#print(f'Current results in the center No. {center}:')
 	print(f'Voted: {votedVoters}/{allVoters} ({votedVoters/allVoters*100:.2f}%)')
-	print(f'Respublicans: {r/votedVoters*100:.2f}%, Democrats: {d/votedVoters*100:.2f}%')
-	pass
-	# TODO: implement
+	print(f'Respublicans: {rVotes/votedVoters*100:.2f}%, Democrats: {dVotes/votedVoters*100:.2f}%')
+	# TODO: restrict access to one center results
 
 
 print('Welcome to admin utility for voting!')

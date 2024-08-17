@@ -69,9 +69,9 @@ with cx_Oracle.connect(user=username, password=password,
 		clearConsole()
 		print(f"Hello! Welcome to tally center No. {centerNumber}")
 		# Ask for name, surname, ID
-		voterName = input("Введите имя пользователя: ").encode()
-		voterSurname = input("Введите фамилию пользователя: ").encode()
-		voterID = input("Введите id пользователя ").encode()
+		voterName = input("Enter voter's name: ").encode()
+		voterSurname = input("Enter voter's surname: ").encode()
+		voterID = input("Enter voter's ID: ").encode()
 		# Hash them
 		hashkey = scrypt(voterName+voterSurname+voterID, 
 			salt=salt.encode(), n=16384, r=8, p=1)
