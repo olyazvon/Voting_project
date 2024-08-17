@@ -12,7 +12,6 @@ with open('salt.txt', 'r') as saltFile:
 
 # Functions
 
-
 def getNewVoter():
 	voterName = input("Voter name: ")
 	voterSurname = input("Voter surname: ")
@@ -20,17 +19,13 @@ def getNewVoter():
 	voterCenter = input("Voter tally center: ")
 	return scrypt((voterName+voterSurname+voterID).encode(), 
 		salt=salt.encode(), n=16384, r=8, p=1), voterCenter
+
 def checkId():
 	voterID = input("Voter ID: ")
 	while  not voterID.isdigit or len(voterID)!=9:
 		print(" id должно состоять из 9 цифр")
 		voterID = input("Voter ID: ")
 	return(voterID)
-def getVotersToBd(Voters,voterCenter,conection):
-	for voter in Voters:
-		hashkey=scrypt((voter).encode(),
-				  salt=salt.encode(), n=16384, r=8, p=1)
-		addVoterQuery(hashkey,voterCenter,conection)
 
 def addVoterQuery(hashkey, center, connection):
 	cursor = connection.cursor()
@@ -40,26 +35,23 @@ def addVoterQuery(hashkey, center, connection):
 		hash=hashkey, center=center)
 	connection.commit()
 
-def showStatistics():
+def showStatistics(center):
+	votedVoters, allVoters = 0, 0
+	r, d = 0, 0
+	print(f'Current results in the center No. {center}:')
+	print(f'Voted: {votedVoters}/{allVoters} ({votedVoters/allVoters*100:.2f}%)')
+	print(f'Respublicans: {r/votedVoters*100:.2f}%, Democrats: {d/votedVoters*100:.2f}%')
 	pass
-	#TODO: implement
+	# TODO: implement
 
 
 print('Welcome to admin utility for voting!')
-Voters1=["АлексейИванов123456789","МарияПетрова234567890","ИванСмирнов345678901","ОльгаКузнецова456789012","ДмитрийВолков567890123"]
-Voters2=["ЕленаФедорова678901234","АндрейПопов789012345","АннаВасильева890123456","МихаилМорозов901234567","ТатьянаСергеева102345678"]
-Voters3=["ВладимирЛебедев213456789", "ИринаСидорова324567890", "СергейГригорьев435678901","НатальяБелова546789012","ЮрийТихонов657890123"]
 
-
+centerNumber = int(input('Input the tally center number: '))
 
 with cx_Oracle.connect(user=username, password=password, 
 	dsn='localhost/xe') as connection:
 	print('Connection success')
-
-	# getVotersToBd(Voters1,1,connection)
-	# getVotersToBd(Voters2, 2, connection)
-	# getVotersToBd(Voters3, 3, connection)
-
 
 	action = ''
 	while action != '3':
@@ -68,4 +60,4 @@ with cx_Oracle.connect(user=username, password=password,
 			a = getNewVoter()
 			addVoterQuery(*a, connection)
 		if action == '2':
-			showStatistics()
+			showStatistics(centerNumber)
