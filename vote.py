@@ -14,13 +14,20 @@ with open('salt.txt', 'r') as saltFile:
 
 #Functions
 
-def voterCheckQuery(hashkey, connection):
+def voterCheckQuery(hashkey, thisCenter, connection):
 	cursor = connection.cursor()
-	#TODO: implement
-	return True, 'You can vote here'
-	#return False, 'This is not your tally center'
-	#return False, 'You have voted already'
-	#...
+	checkResult = cursor.execute(
+		'''SELECT tallyCenter, DECODE(vote, NULL, 0, 1) AS voted
+		FROM Voters WHERE hashKey = :hash''',
+		hash=hashkey).fetchone()
+	if checkResult == None:
+		return False, 'Voter not found. Check your personal data.'
+	assignedCenter, voted = checkResult
+	if voted:
+		return False, 'You have already voted.'
+	if assignedCenter != thisCenter:
+		return False, f'This is not your tally center. Go to the center No. {assignedCenter}'
+	return True, 'You can vote here and now'
 
 def voteQuery(hashkey, vote, connection):
 	cursor = connection.cursor()
@@ -46,7 +53,7 @@ def clearConsole():
 
 #Main flow
 
-centerNumber = input("Enter the tally center number: ")
+centerNumber = int(input("Enter the tally center number: "))
 
 #Database connection
 with cx_Oracle.connect(user=username, password=password, 
@@ -66,7 +73,7 @@ with cx_Oracle.connect(user=username, password=password,
 			salt=salt.encode(), n=16384, r=8, p=1)
 
 		#SQL request
-		canVote, reason = voterCheckQuery(hashkey)
+		canVote, reason = voterCheckQuery(hashkey, centerNumber, connection)
 
 		#Print response, try again
 		print(reason)
