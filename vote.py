@@ -31,8 +31,13 @@ def voterCheckQuery(hashkey, thisCenter, connection):
 
 def voteQuery(hashkey, vote, connection):
 	cursor = connection.cursor()
-	pass
-	# TODO: implement
+	cursor.execute(
+		'''UPDATE Voters
+		SET vote = :vote
+		WHERE hashKey = :hash''',
+		vote=vote, hash=hashkey)
+	connection.commit()
+
 
 def checkVoteInDbQuery(hashkey, vote, connection):
 	cursor = connection.cursor()
@@ -41,7 +46,7 @@ def checkVoteInDbQuery(hashkey, vote, connection):
 
 def paillier(data):
 	# TODO: implement
-	return 'encripted string'
+	return data
 
 def clearConsole():
 	# For Windows
@@ -64,9 +69,9 @@ with cx_Oracle.connect(user=username, password=password,
 		clearConsole()
 		print(f"Hello! Welcome to tally center No. {centerNumber}")
 		# Ask for name, surname, ID
-		voterName = input("Введите имя пользователя: ").encode()
-		voterSurname = input("Введите фамилию пользователя: ").encode()
-		voterID = input("Введите id пользователя ").encode()
+		voterName = input("Enter voter's name: ").encode()
+		voterSurname = input("Enter voter's surname: ").encode()
+		voterID = input("Enter voter's ID: ").encode()
 		# Hash them
 		hashkey = scrypt(voterName+voterSurname+voterID, 
 			salt=salt.encode(), n=16384, r=8, p=1)
@@ -86,6 +91,10 @@ with cx_Oracle.connect(user=username, password=password,
 		while vote not in ('D','R'):
 			vote = input('Wrong character, try again. Type D or R and press Enter: ')
 
+		if vote == 'R':
+			vote = '0000000100000000'
+		if vote == 'D':
+			vote = '0000000000000001'
 		# Encrypt with paillier
 		encryptedVote = paillier(vote)
 

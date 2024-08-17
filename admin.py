@@ -12,7 +12,6 @@ with open('salt.txt', 'r') as saltFile:
 
 # Functions
 
-
 def getNewVoter():
 	voterName = input("Voter name: ")
 	voterSurname = input("Voter surname: ")
@@ -20,11 +19,11 @@ def getNewVoter():
 	voterCenter = input("Voter tally center: ")
 	return scrypt((voterName+voterSurname+voterID).encode(), 
 		salt=salt.encode(), n=16384, r=8, p=1), voterCenter
+
 def checkId():
 	voterID = input("Voter ID: ")
-	while  not voterID.isdigit or len(voterID)!=9:
-		print(" id должно состоять из 9 цифр")
-		voterID = input("Voter ID: ")
+	while (not voterID.isdigit) or len(voterID) != 9:
+		voterID = input("ID must consist of 9 digits. Try again: ")
 	return(voterID)
 def getVotersToBd(Voters,voterCenter,conection):
 	for voter in Voters:
@@ -40,9 +39,16 @@ def addVoterQuery(hashkey, center, connection):
 		hash=hashkey, center=center)
 	connection.commit()
 
-def showStatistics():
-	pass
-	#TODO: implement
+def showStatistics(center):
+	cursor = connection.cursor()
+	cursor.execute('''SELECT COUNT(*), COUNT(vote) FROM Voters''')
+	allVoters, votedVoters = cursor.fetchone()
+	cursor.execute('''SELECT SUM(vote) FROM Voters''')
+	rVotes, dVotes = divmod(cursor.fetchone()[0], 100000000)
+	#print(f'Current results in the center No. {center}:')
+	print(f'Voted: {votedVoters}/{allVoters} ({votedVoters/allVoters*100:.2f}%)')
+	print(f'Respublicans: {rVotes/votedVoters*100:.2f}%, Democrats: {dVotes/votedVoters*100:.2f}%')
+	# TODO: restrict access to one center results
 
 
 print('Welcome to admin utility for voting!')
@@ -50,7 +56,7 @@ Voters1 = ["AlexIvanov123456789", "MaryPetrova234567890", "IvanSmirnov345678901"
 Voters2 = ["ElenaFedorova678901234", "AndreyPopov789012345", "AnnVasilieva890123456", "MihailMorozov901234567","TatianaSergeeva"]
 Voters3 = ["VladimirLebedev213456789", "IrinaSidorova324567890", "SergeyGrigoriev435678901", "NataliaBelova546789012","UriTihonov657890123"]
 
-
+centerNumber = int(input('Input the tally center number: '))
 
 with cx_Oracle.connect(user=username, password=password, 
 	dsn='localhost/xe') as connection:
@@ -68,4 +74,4 @@ with cx_Oracle.connect(user=username, password=password,
 			a = getNewVoter()
 			addVoterQuery(*a, connection)
 		if action == '2':
-			showStatistics()
+			showStatistics(centerNumber)
