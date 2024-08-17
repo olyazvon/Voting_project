@@ -28,12 +28,18 @@ def addVoterQuery(hashkey, center, connection):
 		hash=hashkey, center=center)
 	connection.commit()
 
-def showStatistics():
+def showStatistics(center):
+	votedVoters, allVoters = 0, 0
+	r, d = 0, 0
+	print(f'Current results in the center No. {center}:')
+	print(f'Voted: {votedVoters}/{allVoters} ({votedVoters/allVoters*100:.2f}%)')
+	print(f'Respublicans: {r/votedVoters*100:.2f}%, Democrats: {d/votedVoters*100:.2f}%')
 	pass
 	#TODO: implement
 
 
 print('Welcome to admin utility for voting!')
+centerNumber = int(input('Input the tally center number: '))
 
 with cx_Oracle.connect(user=username, password=password, 
 	dsn='localhost/xe') as connection:
@@ -46,4 +52,4 @@ with cx_Oracle.connect(user=username, password=password,
 			a = getNewVoter()
 			addVoterQuery(*a, connection)
 		if action == '2':
-			showStatistics()
+			showStatistics(centerNumber)
