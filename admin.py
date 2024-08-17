@@ -12,13 +12,25 @@ with open('salt.txt', 'r') as saltFile:
 
 # Functions
 
+
 def getNewVoter():
 	voterName = input("Voter name: ")
 	voterSurname = input("Voter surname: ")
-	voterID = input("Voter ID: ")
+	voterID = checkId()
 	voterCenter = input("Voter tally center: ")
 	return scrypt((voterName+voterSurname+voterID).encode(), 
 		salt=salt.encode(), n=16384, r=8, p=1), voterCenter
+def checkId():
+	voterID = input("Voter ID: ")
+	while  not voterID.isdigit or len(voterID)!=9:
+		print(" id должно состоять из 9 цифр")
+		voterID = input("Voter ID: ")
+	return(voterID)
+def getVotersToBd(Voters,voterCenter,conection):
+	for voter in Voters:
+		hashkey=scrypt((voter).encode(),
+				  salt=salt.encode(), n=16384, r=8, p=1)
+		addVoterQuery(hashkey,voterCenter,conection)
 
 def addVoterQuery(hashkey, center, connection):
 	cursor = connection.cursor()
@@ -34,10 +46,20 @@ def showStatistics():
 
 
 print('Welcome to admin utility for voting!')
+Voters1=["АлексейИванов123456789","МарияПетрова234567890","ИванСмирнов345678901","ОльгаКузнецова456789012","ДмитрийВолков567890123"]
+Voters2=["ЕленаФедорова678901234","АндрейПопов789012345","АннаВасильева890123456","МихаилМорозов901234567","ТатьянаСергеева102345678"]
+Voters3=["ВладимирЛебедев213456789", "ИринаСидорова324567890", "СергейГригорьев435678901","НатальяБелова546789012","ЮрийТихонов657890123"]
+
+
 
 with cx_Oracle.connect(user=username, password=password, 
 	dsn='localhost/xe') as connection:
 	print('Connection success')
+
+	# getVotersToBd(Voters1,1,connection)
+	# getVotersToBd(Voters2, 2, connection)
+	# getVotersToBd(Voters3, 3, connection)
+
 
 	action = ''
 	while action != '3':
