@@ -46,9 +46,9 @@ def showStatistics():
 
 
 print('Welcome to admin utility for voting!')
-Voters1=["АлексейИванов123456789","МарияПетрова234567890","ИванСмирнов345678901","ОльгаКузнецова456789012","ДмитрийВолков567890123"]
-Voters2=["ЕленаФедорова678901234","АндрейПопов789012345","АннаВасильева890123456","МихаилМорозов901234567","ТатьянаСергеева102345678"]
-Voters3=["ВладимирЛебедев213456789", "ИринаСидорова324567890", "СергейГригорьев435678901","НатальяБелова546789012","ЮрийТихонов657890123"]
+Voters1 = ["AlexIvanov123456789", "MaryPetrova234567890", "IvanSmirnov345678901", "OlgaKuznetzova456789012","DmitriyVolkov567890123"]
+Voters2 = ["ElenaFedorova678901234", "AndreyPopov789012345", "AnnVasilieva890123456", "MihailMorozov901234567","TatianaSergeeva"]
+Voters3 = ["VladimirLebedev213456789", "IrinaSidorova324567890", "SergeyGrigoriev435678901", "NataliaBelova546789012","UriTihonov657890123"]
 
 
 
