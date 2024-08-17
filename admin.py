@@ -1,16 +1,16 @@
-#THE MAIN MANAGEMENT SCRIPT
+# THE MAIN MANAGEMENT SCRIPT
 
 import cx_Oracle
 from hashlib import scrypt
 
-#Globals
+# Globals
 
 username = 'election_admin'
 password = '1234'
 with open('salt.txt', 'r') as saltFile:
 	salt = saltFile.read()
 
-#Functions
+# Functions
 
 def getNewVoter():
 	voterName = input("Voter name: ")
@@ -22,7 +22,9 @@ def getNewVoter():
 
 def addVoterQuery(hashkey, center, connection):
 	cursor = connection.cursor()
-	cursor.execute("INSERT INTO Voters (hashKey, tallyCenter) VALUES (:hash, :center)",
+	cursor.execute(
+		'''INSERT INTO Voters (hashKey, tallyCenter)
+		VALUES (:hash, :center)''',
 		hash=hashkey, center=center)
 	connection.commit()
 
