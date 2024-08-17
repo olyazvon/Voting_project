@@ -15,10 +15,17 @@ with open('salt.txt', 'r') as saltFile:
 def getNewVoter():
 	voterName = input("Voter name: ")
 	voterSurname = input("Voter surname: ")
-	voterID = input("Voter ID: ")
+	voterID = checkId()
 	voterCenter = input("Voter tally center: ")
 	return scrypt((voterName+voterSurname+voterID).encode(), 
 		salt=salt.encode(), n=16384, r=8, p=1), voterCenter
+
+def checkId():
+	voterID = input("Voter ID: ")
+	while  not voterID.isdigit or len(voterID)!=9:
+		print(" id должно состоять из 9 цифр")
+		voterID = input("Voter ID: ")
+	return(voterID)
 
 def addVoterQuery(hashkey, center, connection):
 	cursor = connection.cursor()
@@ -35,10 +42,11 @@ def showStatistics(center):
 	print(f'Voted: {votedVoters}/{allVoters} ({votedVoters/allVoters*100:.2f}%)')
 	print(f'Respublicans: {r/votedVoters*100:.2f}%, Democrats: {d/votedVoters*100:.2f}%')
 	pass
-	#TODO: implement
+	# TODO: implement
 
 
 print('Welcome to admin utility for voting!')
+
 centerNumber = int(input('Input the tally center number: '))
 
 with cx_Oracle.connect(user=username, password=password, 
