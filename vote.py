@@ -4,6 +4,12 @@ import cx_Oracle
 from hashlib import scrypt
 from time import sleep
 from os import name as os_name, system as os_system
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad
+
+
+
 
 # Globals
 
@@ -41,12 +47,29 @@ def voteQuery(hashkey, vote, connection):
 
 def checkVoteInDbQuery(hashkey, vote, connection):
 	cursor = connection.cursor()
-	# TODO: implement
+	checkResult = cursor.execute(
+		'''SELECT *
+        FROM Voters WHERE hashKey = :hash and vote= :vote''',
+		hash=hashkey ,vote=vote).fetchone()
+	if checkResult == None:
+		return False, 'Your vote is not in DB'
 	return True
+
 
 def paillier(data):
 	# TODO: implement
 	return data
+
+def encrypt_data(data, key, iv):
+		cipher = AES.new(key, AES.MODE_CBC, iv)
+		padded_data = pad(data, AES.block_size)
+		encrypted_data = cipher.encrypt(padded_data)
+		return encrypted_data
+def save_key_iv_to_file(keys_iv, file_path='keys_iv.bin'):
+    with open(file_path, 'wb') as f:
+        for key, iv in keys_iv:
+            f.write(key)
+            f.write(iv)
 
 def clearConsole():
 	# For Windows
@@ -91,13 +114,22 @@ with cx_Oracle.connect(user=username, password=password,
 		while vote not in ('D','R'):
 			vote = input('Wrong character, try again. Type D or R and press Enter: ')
 
-		if vote == 'R':
-			vote = '0000000100000000'
-		if vote == 'D':
-			vote = '0000000000000001'
-		# Encrypt with paillier
-		encryptedVote = paillier(vote)
 
+		# if vote == 'R':
+		# 	vote = '0000000100000000'
+		# if vote == 'D':
+		# 	vote = '0000000000000001'
+		# Encrypt with paillier
+		#encryptedVote = paillier(vote)
+		keys_iv = []
+		encrypted_votes = []
+		key = get_random_bytes(32)  # AES-256 key
+		iv = get_random_bytes(16)  # AES block size for CBC mode
+		vote1=b+"'"+vote+"'"
+		encryptedVote = encrypt_data(vote, key, iv)
+		encrypted_votes.append(encryptedVote)
+		keys_iv.append((key, iv))
+		save_key_iv_to_file(keys_iv)
 		# SQL request
 		voteQuery(hashkey, encryptedVote, connection)
 

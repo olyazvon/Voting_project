@@ -25,11 +25,11 @@ def checkId():
 	while (not voterID.isdigit) or len(voterID) != 9:
 		voterID = input("ID must consist of 9 digits. Try again: ")
 	return(voterID)
-# def getVotersToBd(Voters,voterCenter,conection):
-# 	for voter in Voters:
-# 		hashkey=scrypt((voter).encode(),
-# 				  salt=salt.encode(), n=16384, r=8, p=1)
-# 		addVoterQuery(hashkey,voterCenter,conection)
+def getVotersToBd(Voters,voterCenter,conection):
+	for voter in Voters:
+		hashkey=scrypt((voter).encode(),
+				  salt=salt.encode(), n=16384, r=8, p=1)
+		addVoterQuery(hashkey,voterCenter,conection)
 
 def addVoterQuery(hashkey, center, connection):
 	cursor = connection.cursor()
@@ -38,6 +38,7 @@ def addVoterQuery(hashkey, center, connection):
 		VALUES (:hash, :center)''',
 		hash=hashkey, center=center)
 	connection.commit()
+
 
 def showStatistics(center):
 	cursor = connection.cursor()
