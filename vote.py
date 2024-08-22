@@ -4,6 +4,7 @@ import cx_Oracle
 from hashlib import scrypt
 from time import sleep
 from os import name as os_name, system as os_system
+from phe import paillier
 
 # Globals
 
@@ -11,8 +12,27 @@ username = 'election_admin'
 password = '1234'
 with open('salt.txt', 'r') as saltFile:
 	salt = saltFile.read()
+with open('paillier_public_key.txt', 'r') as keyFile:
+	n = int(keyFile.read())
+	paillier_public_key = paillier.PaillierPublicKey(n)
+MAX_VOTERS = 100000000
+
 
 # Functions
+
+def getID(phrase):
+	voterID = input(phrase)
+	while (not voterID.isdigit) or len(voterID) != 9:
+		voterID = input("This field must consist of 9 digits. Try again: ")
+	return(voterID)
+
+def getName(phrase):
+	voterName = input(phrase)
+	tmp = voterName.replace(' ', '').replace('-', '')
+	while (not tmp.isalpha()) or len(tmp) == 0:
+		voterName = input("This field may contain only letters, space and dash. Try again: ")
+		tmp = voterName.replace(' ', '').replace('-', '')
+	return(voterName)
 
 def voterCheckQuery(hashkey, thisCenter, connection):
 	cursor = connection.cursor()
@@ -41,20 +61,21 @@ def voteQuery(hashkey, vote, connection):
 
 def checkVoteInDbQuery(hashkey, vote, connection):
 	cursor = connection.cursor()
-	# TODO: implement
-	return True
+	checkResult = cursor.execute(
+		'''SELECT * FROM Voters
+		WHERE hashKey = :hash AND vote = :vote''',
+		hash=hashkey, vote=vote.ljust(154)).fetchone()
+	return False if checkResult == None else True
 
-def paillier(data):
-	# TODO: implement
-	return data
+def paillier_encrypt(data):
+	result = paillier_public_key.raw_encrypt(data)
+	print(result)
+	return str(result)
 
 def clearConsole():
-	# For Windows
-	if os_name == 'nt':
-		os_system('cls')
-	# For Unix
-	else:
-		os_system('clear')
+	# cls for Windows, clear for Unix
+	os_system('cls' if os_name == 'nt' else 'clear')
+
 
 # Main flow
 
@@ -69,9 +90,9 @@ with cx_Oracle.connect(user=username, password=password,
 		clearConsole()
 		print(f"Hello! Welcome to tally center No. {centerNumber}")
 		# Ask for name, surname, ID
-		voterName = input("Enter voter's name: ").encode()
-		voterSurname = input("Enter voter's surname: ").encode()
-		voterID = input("Enter voter's ID: ").encode()
+		voterName = getName("Enter voter's name: ").encode()
+		voterSurname = getName("Enter voter's surname: ").encode()
+		voterID = getID("Enter voter's ID: ").encode()
 		# Hash them
 		hashkey = scrypt(voterName+voterSurname+voterID, 
 			salt=salt.encode(), n=16384, r=8, p=1)
@@ -91,12 +112,13 @@ with cx_Oracle.connect(user=username, password=password,
 		while vote not in ('D','R'):
 			vote = input('Wrong character, try again. Type D or R and press Enter: ')
 
-		if vote == 'R':
-			vote = '0000000100000000'
 		if vote == 'D':
-			vote = '0000000000000001'
+			vote = MAX_VOTERS
+		if vote == 'R':
+			vote = 1
+
 		# Encrypt with paillier
-		encryptedVote = paillier(vote)
+		encryptedVote = paillier_encrypt(vote)
 
 		# SQL request
 		voteQuery(hashkey, encryptedVote, connection)
@@ -104,7 +126,7 @@ with cx_Oracle.connect(user=username, password=password,
 		# Check is the vote saved correctly
 		print("Success! Have a nice day!" 
 			if checkVoteInDbQuery(hashkey, encryptedVote, connection)
-			else "Something went wrong. Please try again.")
+			else "Something went wrong, your vote is not saved. Please try again.")
 
 		print("The screen will clear in 5 seconds")
 		sleep(5)
