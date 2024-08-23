@@ -10,6 +10,7 @@ MAX_VOTERS = 100000000
 
 username = 'election_admin'
 password = '1234'
+# TODO:сделать из 3 функций  ниже 1 фунцию с обработкой исключений
 with open('salt.txt', 'r') as saltFile:
 	salt = saltFile.read()
 
@@ -33,14 +34,15 @@ def showStatistics():
 
 	cursor.execute('''SELECT vote FROM Voters WHERE vote IS NOT NULL''')
 	votes = [paillier.EncryptedNumber(public_key, int(i[-1])) for i in cursor]
-	
-	totalSum = private_key.decrypt(sum(votes))
+	if votes==[]:
+		print("Nobody voted yet")
+	else:
+		totalSum = private_key.decrypt(sum(votes))
+		dVotes, rVotes = divmod(totalSum, MAX_VOTERS)
 
-	dVotes, rVotes = divmod(totalSum, MAX_VOTERS)
-
-	#print(f'Current results in the center No. {center}:')
-	print(f'Voted: {votedVoters}/{allVoters} ({votedVoters/allVoters*100:.2f}%)')
-	print(f'Respublicans: {rVotes/votedVoters*100:.2f}%, Democrats: {dVotes/votedVoters*100:.2f}%')
+		#print(f'Current results in the center No. {center}:')
+		print(f'Voted: {votedVoters}/{allVoters} ({votedVoters/allVoters*100:.2f}%)')
+		print(f'Respublicans: {rVotes/votedVoters*100:.2f}%, Democrats: {dVotes/votedVoters*100:.2f}%')
 
 
 print('Welcome to admin utility for voting!')

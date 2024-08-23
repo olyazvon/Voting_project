@@ -69,7 +69,6 @@ def checkVoteInDbQuery(hashkey, vote, connection):
 
 def paillier_encrypt(data):
 	result = paillier_public_key.raw_encrypt(data)
-	print(result)
 	return str(result)
 
 def clearConsole():
