@@ -1,25 +1,36 @@
 # THE MAIN MANAGEMENT SCRIPT
 
 import cx_Oracle
+import sys
 #from hashlib import scrypt
 from phe import paillier
 
 # Globals
 
 MAX_VOTERS = 100000000
+# TODO  удалить перед сдачей:
+# username = 'election_admin'
+# password = '1234'
 
-username = 'election_admin'
-password = '1234'
+username= input("input username")
+password= input("input password")
 # TODO:сделать из 3 функций  ниже 1 фунцию с обработкой исключений
-with open('salt.txt', 'r') as saltFile:
-	salt = saltFile.read()
 
-with open('paillier_public_key.txt') as f:
-	n = int(f.read())
+def readFile(filename):
+	try:
+		with open(filename, encoding='utf-8') as file:
+				contents = file.read()
+		return contents
+	except FileNotFoundError:
+			print(f"File {filename} doesnt exist")
+			sys.exit(1)
 
-with open('paillier_private_key.txt') as f:
-	p = int(f.readline())
-	q = int(f.readline())
+#salt=readFile('salt.txt')
+n=int(readFile('paillier_public_key.txt'))
+lines=readFile('paillier_private_key.txt').split("\n")
+p = int(lines[0])
+q = int(lines[1])
+
 
 public_key = paillier.PaillierPublicKey(n)
 private_key = paillier.PaillierPrivateKey(public_key, p, q)
@@ -45,14 +56,18 @@ def showStatistics():
 		print(f'Respublicans: {rVotes/votedVoters*100:.2f}%, Democrats: {dVotes/votedVoters*100:.2f}%')
 
 
-print('Welcome to admin utility for voting!')
 
-with cx_Oracle.connect(user=username, password=password, 
+
+try:
+	with cx_Oracle.connect(user=username, password=password,
 	dsn='localhost/xe') as connection:
-	print('Connection success')
+		print('Connection success')
+		print('Welcome to admin utility for voting!')
+		action = ''
+		while action != '3':
+			action = input('Enter 2 for current statistics, 3 for exit: ')
+			if action == '2':
+				showStatistics()
+except cx_Oracle.DatabaseError:
+	print("Failed to connect to DB, check login and password")
 
-	action = ''
-	while action != '3':
-		action = input('Enter 2 for current statistics, 3 for exit: ')
-		if action == '2':
-			showStatistics()
