@@ -15,7 +15,7 @@ with open('salt.txt', 'r') as saltFile:
 with open('paillier_public_key.txt', 'r') as keyFile:
 	n = int(keyFile.read())
 	paillier_public_key = paillier.PaillierPublicKey(n)
-MAX_VOTERS = 100000000
+MAX_VOTERS = 10000
 
 
 # Functions
@@ -64,7 +64,7 @@ def checkVoteInDbQuery(hashkey, vote, connection):
 	checkResult = cursor.execute(
 		'''SELECT * FROM Voters
 		WHERE hashKey = :hash AND vote = :vote''',
-		hash=hashkey, vote=vote.ljust(154)).fetchone()
+		hash=hashkey, vote=vote.ljust(10)).fetchone()
 	return False if checkResult == None else True
 
 def paillier_encrypt(data):
