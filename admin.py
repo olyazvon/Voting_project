@@ -12,6 +12,9 @@ from subprocess import run, DEVNULL
 
 MAX_VOTERS = 10000
 centers = (1, 2, 3)
+PAILLIER_PUB_KEY_FILE = 'paillier_public_key.txt'
+PAILLIER_PRIV_KEY_FILE = 'paillier_private_key.txt'
+
 # TODO  удалить перед сдачей:
 username = 'election_admin'
 password = '1234'
@@ -197,8 +200,8 @@ def main():
 # Main flow
 
 try:
-	n = int(readFile('paillier_public_key.txt'))
-	lines = readFile('paillier_private_key.txt').split("\n")
+	n = int(readFile(PAILLIER_PUB_KEY_FILE))
+	lines = readFile(PAILLIER_PRIV_KEY_FILE).split("\n")
 	p = int(lines[0])
 	q = int(lines[1])
 	public_key = paillier.PaillierPublicKey(n)

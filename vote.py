@@ -7,17 +7,27 @@ from os import name as os_name, system as os_system
 from phe import paillier
 from random import SystemRandom
 
-# Globals
-# TODO: функция завершения голосования
-with open('salt.txt', 'r') as saltFile:
-	salt = saltFile.read()
-with open('paillier_public_key.txt', 'r') as keyFile:
-	n = int(keyFile.read())
-	paillier_public_key = paillier.PaillierPublicKey(n)
+# Constants
+
 MAX_VOTERS = 10000
+SALT_FILE = 'salt.txt'
+PAILLIER_PUB_KEY_FILE = 'paillier_public_key.txt'
+
+# TODO : удалить перед сдачей:
+# username = 'election_admin'
+# password = '123'
 
 
 # Functions
+
+def readFile(filename):
+	try:
+		with open(filename, encoding='utf-8') as file:
+				contents = file.read()
+		return contents
+	except FileNotFoundError:
+			print(f"File {filename} doesn't exist")
+			exit(1)
 
 def getID(phrase):
 	voterID = input(phrase)
@@ -76,18 +86,12 @@ def clearConsole():
 	os_system('cls' if os_name == 'nt' else 'clear')
 
 
-# Main flow
-
-
 
 # Database connection
 def main():
 	username = input("Input username: ")
 	password = input("Input password: ")
 
-	# TODO : удалить перед сдачей:
-	# username = 'election_admin'
-	# password = '123'
 	with cx_Oracle.connect(user=username, password=password,
 		dsn='localhost/xe') as connection:
 		print("You are logged in!")
@@ -137,6 +141,14 @@ def main():
 
 			print("The screen will clear in 5 seconds")
 			sleep(5)
+
+
+# Main flow
+
+salt = readFile(SALT_FILE)
+
+n = int(readFile(PAILLIER_PUB_KEY_FILE))
+paillier_public_key = paillier.PaillierPublicKey(n)
 
 while True:
 	try:
