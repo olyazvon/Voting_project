@@ -1,5 +1,7 @@
-# THE MAIN MANAGEMENT SCRIPT
+# THE MAIN MANGEMENT SCRIPT
+# run from terminal(console)
 
+import getpass
 import cx_Oracle
 import os
 from phe import paillier
@@ -172,7 +174,7 @@ def finalResult():
 
 def main():
 	username = input("Input username: ")
-	password = input("Input password: ")
+	password = getpass.getpass(prompt="Input admin password: ")
 
 	with cx_Oracle.connect(user=username, password=password,
 	dsn='localhost/xe') as connection:
