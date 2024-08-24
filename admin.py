@@ -4,10 +4,11 @@ import cx_Oracle
 import os
 from phe import paillier
 from pysnark.qaptools.runqapver import run as verify
+from random import SystemRandom
 from subprocess import run, DEVNULL
 
 
-# Globals
+# Constants
 
 MAX_VOTERS = 10000
 centers = (1, 2, 3)
@@ -15,47 +16,26 @@ centers = (1, 2, 3)
 username = 'election_admin'
 password = '1234'
 
-# username = input("Input username: ")
-# password = input("Input password: ")
-
-def readFile(filename):
-	try:
-		with open(filename, encoding='utf-8') as file:
-				contents = file.read()
-		return contents
-	except FileNotFoundError:
-			print(f"File {filename} doesn't exist")
-			exit(1)
-
-n=int(readFile('paillier_public_key.txt'))
-lines=readFile('paillier_private_key.txt').split("\n")
-p = int(lines[0])
-q = int(lines[1])
-
-
-public_key = paillier.PaillierPublicKey(n)
-private_key = paillier.PaillierPrivateKey(public_key, p, q)
 
 # Functions
 
-# def showStatistics():
-# 	cursor = connection.cursor()
+def catchMissingFile(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except FileNotFoundError as e:
+            filename = e.filename if hasattr(e, 'filename') else 'unknown'
+            print(f"File {filename} not found, can't continue.")
+            exit()
+    return wrapper
 
-# 	cursor.execute('''SELECT COUNT(*), COUNT(vote) FROM Voters''')
-# 	allVoters, votedVoters = cursor.fetchone()
+@catchMissingFile
+def readFile(filename):
+	with open(filename, encoding='utf-8') as file:
+			contents = file.read()
+	return contents
 
-# 	cursor.execute('''SELECT vote FROM Voters WHERE vote IS NOT NULL''')
-# 	votes = [paillier.EncryptedNumber(public_key, int(i[-1])) for i in cursor]
-# 	if votes==[]:
-# 		print("Nobody voted yet")
-# 	else:
-# 		totalSum = private_key.decrypt(sum(votes))
-# 		dVotes, rVotes = divmod(totalSum, MAX_VOTERS)
-
-# 		#print(f'Current results in the center No. {center}:')
-# 		print(f'Voted: {votedVoters}/{allVoters} ({votedVoters/allVoters*100:.2f}%)')
-# 		print(f'Respublicans: {rVotes/votedVoters*100:.2f}%, Democrats: {dVotes/votedVoters*100:.2f}%')
-
+@catchMissingFile
 def storeFiles(center):
 	if os.path.exists('pysnark_values_' + str(center)):
 		os.remove('pysnark_values_' + str(center))
@@ -64,6 +44,7 @@ def storeFiles(center):
 		os.remove('pysnark_proof_' + str(center))
 	os.rename('pysnark_proof', 'pysnark_proof_' + str(center))
 
+@catchMissingFile
 def prepareFiles(center):
 	if os.path.exists('pysnark_values'):
 		os.remove('pysnark_values')
@@ -72,10 +53,9 @@ def prepareFiles(center):
 		os.remove('pysnark_proof')
 	os.rename('pysnark_proof_' + str(center), 'pysnark_proof')
 
+@catchMissingFile
 def loadData():
 	with open('pysnark_values') as f:
-		#dVotes = f.readlines()[-2].split(' ')[-1][:-1]
-		#rVotes = f.readlines()[-1].split(' ')[-1][:-1]
 		l = f.readlines()
 		return [int(l[i].split(' ')[-1][:-1]) for i in (1, 2, -2, -1)]
 
@@ -84,7 +64,14 @@ def showData(data):
 	print(f'    Voted: {votedVoters}/{allVoters} ({votedVoters/allVoters*100:.2f}%)')
 	print(f'    Respublicans: {rVotes/votedVoters*100:.2f}%, Democrats: {dVotes/votedVoters*100:.2f}%')
 
-def partialResult(center):
+@catchMissingFile
+def deleteExtraFiles():
+	os.remove('pysnark_eqs')
+	os.remove('pysnark_wires')
+	if os.path.exists('pysnark_mastersk'):
+		os.remove('pysnark_mastersk')
+
+def partialResult(center, connection):
 	cursor = connection.cursor()
 
 	#two sql requests
@@ -99,7 +86,8 @@ def partialResult(center):
 		WHERE vote IS NOT NULL AND tallyCenter = :center''',
 		center=center)
 	votes = [paillier.EncryptedNumber(public_key, int(i[-1])) for i in cursor]
-	votes.append(public_key.encrypt(0))
+	obf = SystemRandom().randrange(1, 150)
+	votes.append(public_key.encrypt(0, r_value=obf))
 
 	print(f'In the center No. {center}:')
 
@@ -107,8 +95,10 @@ def partialResult(center):
 	encryptedSum = sum(votes).ciphertext()
 
 	#zkp decrypt
-	run(['python', 'decrypt.py', str(encryptedSum), str(allVoters), str(votedVoters)], 
-		stdout=DEVNULL, stderr=DEVNULL)
+	retCode = run(['python', 'decrypt.py', str(encryptedSum), str(allVoters), str(votedVoters)], 
+		stdout=DEVNULL, stderr=DEVNULL).returncode
+	if retCode != 0:
+		print('The decryption subprocess terminated with an error. Decryption was not performed.')
 
 	if votedVoters == 0:
 		print("    Nobody has voted yet.")
@@ -121,17 +111,15 @@ def partialResult(center):
 	storeFiles(center)
 
 	#del extra files
-	os.remove('pysnark_eqs')
-	os.remove('pysnark_wires')
-	if os.path.exists('pysnark_mastersk'):
-		os.remove('pysnark_mastersk')
+	deleteExtraFiles()
 
-def allPartialResults():
+def allPartialResults(connection):
 	for center in centers:
-		partialResult(center)
+		partialResult(center, connection)
 
 def VerifyZKP(center):
-	if not os.path.exists('pysnark_values_' + str(center)) or not os.path.exists('pysnark_proof_' + str(center)):
+	if (not os.path.exists('pysnark_values_' + str(center)) or 
+		not os.path.exists('pysnark_proof_' + str(center))):
 		print(f'Skipping center {center}: missing data.')
 		return
 	#rename file
@@ -154,6 +142,11 @@ def VerifyZKP(center):
 
 
 def VerifyAllZKP():
+	if (not os.path.exists('pysnark_schedule') or
+		not os.path.exists('pysnark_masterpk') or
+		not os.path.exists('pysnark_vk_main')):
+		print("Missing global computational data, can't verify.")
+		return
 	for center in centers:
 		VerifyZKP(center)
 
@@ -174,26 +167,58 @@ def finalResult():
 		showData(results)
 
 
-try:
+def main():
+	username = input("Input username: ")
+	password = input("Input password: ")
+
 	with cx_Oracle.connect(user=username, password=password,
 	dsn='localhost/xe') as connection:
 		print('Connection success')
 		print('Welcome to admin utility for voting!')
 		action = ''
-		while action != '4':
+		while True:
 			action = input(
-				'Please choose: \n'
+				'\nPlease choose: \n'
 				'1 to compute partial results, \n'
 				'2 to verify computed results with ZKP, \n'
 				'3 to get final results, \n'
 				'4 for exit: \n')
+			print()
 			if action == '1':
-				allPartialResults()
+				allPartialResults(connection)
 			if action == '2':
 				VerifyAllZKP()
 			if action == '3':
 				finalResult()
-				
-except cx_Oracle.DatabaseError:
-	print("Failed to connect to DB, check login and password")
+			if action == '4':
+				exit()
+
+
+# Main flow
+
+try:
+	n = int(readFile('paillier_public_key.txt'))
+	lines = readFile('paillier_private_key.txt').split("\n")
+	p = int(lines[0])
+	q = int(lines[1])
+	public_key = paillier.PaillierPublicKey(n)
+	private_key = paillier.PaillierPrivateKey(public_key, p, q)
+except:
+	print("Wrong paillier keys structure.")
+	exit()
+
+while True:
+	try:
+		main()				
+	except cx_Oracle.DatabaseError as exc:
+		error_code = exc.args[0].code
+		if error_code == 1017:
+			print("Invalid username or password.")
+		elif error_code == 28000:
+			print("User is locked.")
+		else:
+			print("Database error:", exc)
+	except KeyboardInterrupt:
+		print("\nStopped with Ctrl-C")
+		break
 

@@ -5,6 +5,7 @@ from hashlib import scrypt
 from time import sleep
 from os import name as os_name, system as os_system
 from phe import paillier
+from random import SystemRandom
 
 # Globals
 # TODO: функция завершения голосования
@@ -66,7 +67,8 @@ def checkVoteInDbQuery(hashkey, vote, connection):
 	return False if checkResult == None else True
 
 def paillier_encrypt(data):
-	result = paillier_public_key.raw_encrypt(data)
+	obf = SystemRandom().randrange(1, 150)
+	result = paillier_public_key.raw_encrypt(data, r_value=obf)
 	return str(result)
 
 def clearConsole():
@@ -88,6 +90,7 @@ def main():
 	# password = '123'
 	with cx_Oracle.connect(user=username, password=password,
 		dsn='localhost/xe') as connection:
+		print("You are logged in!")
 		centerNumber = int(input("Enter the tally center number: "))
 		# Main loop
 		while True:
@@ -134,12 +137,18 @@ def main():
 
 			print("The screen will clear in 5 seconds")
 			sleep(5)
+
 while True:
 	try:
 		main()
 	except cx_Oracle.DatabaseError as exc:
 		error_code = exc.args[0].code
-		if error_code==1017:
-			print("Invalid username or password")
+		if error_code == 1017:
+			print("Invalid username or password.")
+		elif error_code == 28000:
+			print("User is locked.")
 		else:
-			print("other DB error")
+			print("Database error:", exc)
+	except KeyboardInterrupt:
+		print("\nVoting stopped.")
+		break
