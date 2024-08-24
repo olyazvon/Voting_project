@@ -1,5 +1,7 @@
 # THE MAIN VOTING SCRIPT
+# run from terminal(console)
 
+import getpass
 import cx_Oracle
 from hashlib import scrypt
 from time import sleep
@@ -89,8 +91,8 @@ def clearConsole():
 
 # Database connection
 def main():
-	username = input("Input username: ")
-	password = input("Input password: ")
+	username = input("Input admin username: ")
+	password = getpass.getpass(prompt="Input admin password: ")
 
 	with cx_Oracle.connect(user=username, password=password,
 		dsn='localhost/xe') as connection:
@@ -157,6 +159,8 @@ while True:
 		error_code = exc.args[0].code
 		if error_code == 1017:
 			print("Invalid username or password.")
+		elif error_code == 1005:
+			print("No password provided")
 		elif error_code == 28000:
 			print("User is locked.")
 		else:
