@@ -7,9 +7,7 @@ from os import name as os_name, system as os_system
 from phe import paillier
 
 # Globals
-
-username = 'election_admin'
-password = '1234'
+# TODO: функция завершения голосования
 with open('salt.txt', 'r') as saltFile:
 	salt = saltFile.read()
 with open('paillier_public_key.txt', 'r') as keyFile:
@@ -78,55 +76,70 @@ def clearConsole():
 
 # Main flow
 
-centerNumber = int(input("Enter the tally center number: "))
+
 
 # Database connection
-with cx_Oracle.connect(user=username, password=password, 
-	dsn='localhost/xe') as connection:
+def main():
+	username = input("Input username: ")
+	password = input("Input password: ")
 
-	# Main loop
-	while True:
-		clearConsole()
-		print(f"Hello! Welcome to tally center No. {centerNumber}")
-		# Ask for name, surname, ID
-		voterName = getName("Enter voter's name: ").encode()
-		voterSurname = getName("Enter voter's surname: ").encode()
-		voterID = getID("Enter voter's ID: ").encode()
-		# Hash them
-		hashkey = scrypt(voterName+voterSurname+voterID, 
-			salt=salt.encode(), n=16384, r=8, p=1)
+	# TODO : удалить перед сдачей:
+	# username = 'election_admin'
+	# password = '123'
+	with cx_Oracle.connect(user=username, password=password,
+		dsn='localhost/xe') as connection:
+		centerNumber = int(input("Enter the tally center number: "))
+		# Main loop
+		while True:
+			clearConsole()
+			print(f"Hello! Welcome to tally center No. {centerNumber}")
+			# Ask for name, surname, ID
+			voterName = getName("Enter voter's name: ").encode()
+			voterSurname = getName("Enter voter's surname: ").encode()
+			voterID = getID("Enter voter's ID: ").encode()
+			# Hash them
+			hashkey = scrypt(voterName+voterSurname+voterID,
+				salt=salt.encode(), n=16384, r=8, p=1)
 
-		# SQL request
-		canVote, reason = voterCheckQuery(hashkey, centerNumber, connection)
+			# SQL request
+			canVote, reason = voterCheckQuery(hashkey, centerNumber, connection)
 
-		# Print response, try again
-		print(reason)
-		if not canVote:
-			print('You can try again in 5 seconds...')
+			# Print response, try again
+			print(reason)
+			if not canVote:
+				print('You can try again in 5 seconds...')
+				sleep(5)
+				continue
+
+			# Vote cycle
+			vote = input("You are voting now! Type D or R and press Enter: ")
+			while vote not in ('D','R'):
+				vote = input('Wrong character, try again. Type D or R and press Enter: ')
+
+			if vote == 'D':
+				vote = MAX_VOTERS
+			if vote == 'R':
+				vote = 1
+
+			# Encrypt with paillier
+			encryptedVote = paillier_encrypt(vote)
+
+			# SQL request
+			voteQuery(hashkey, encryptedVote, connection)
+
+			# Check is the vote saved correctly
+			print("Success! Have a nice day!"
+				if checkVoteInDbQuery(hashkey, encryptedVote, connection)
+				else "Something went wrong, your vote is not saved. Please try again.")
+
+			print("The screen will clear in 5 seconds")
 			sleep(5)
-			continue
-
-		# Vote cycle
-		vote = input("You are voting now! Type D or R and press Enter: ")
-		while vote not in ('D','R'):
-			vote = input('Wrong character, try again. Type D or R and press Enter: ')
-
-		if vote == 'D':
-			vote = MAX_VOTERS
-		if vote == 'R':
-			vote = 1
-
-		# Encrypt with paillier
-		encryptedVote = paillier_encrypt(vote)
-
-		# SQL request
-		voteQuery(hashkey, encryptedVote, connection)
-
-		# Check is the vote saved correctly
-		print("Success! Have a nice day!" 
-			if checkVoteInDbQuery(hashkey, encryptedVote, connection)
-			else "Something went wrong, your vote is not saved. Please try again.")
-
-		print("The screen will clear in 5 seconds")
-		sleep(5)
-
+while True:
+	try:
+		main()
+	except cx_Oracle.DatabaseError as exc:
+		error_code = exc.args[0].code
+		if error_code==1017:
+			print("Invalid username or password")
+		else:
+			print("other DB error")
