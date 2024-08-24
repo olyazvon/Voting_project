@@ -78,7 +78,6 @@ def clearConsole():
 
 
 
-# TODO  вынести в отдельную функцию:
 # Database connection
 def main():
 	username = input("Input username: ")

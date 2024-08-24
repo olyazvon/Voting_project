@@ -1,9 +1,7 @@
 # THE MAIN MANAGEMENT SCRIPT
 
 import cx_Oracle
-import sys
 import os
-#from hashlib import scrypt
 from phe import paillier
 from pysnark.qaptools.runqapver import run as verify
 from subprocess import run, DEVNULL
@@ -19,7 +17,6 @@ password = '1234'
 
 # username = input("Input username: ")
 # password = input("Input password: ")
-# TODO:сделать из 3 функций  ниже 1 фунцию с обработкой исключений
 
 def readFile(filename):
 	try:
