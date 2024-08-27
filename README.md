@@ -45,7 +45,7 @@ This is a study project, implementing a comprehensive voting system designed to 
 
 #### Note
 
-This project contains Windows executables qapcoeffcache.exe, qapgen.exe, qapgenf.exe, qapinput.exe, qapprove.exe and qapver.exe. These files don't belong to us. 
+This project contains Windows executables `qapcoeffcache.exe`, `qapgen.exe`, `qapgenf.exe`, `qapinput.exe`, `qapprove.exe` and `qapver.exe`. These files don't belong to us. 
 Copyright (c) 2016-2018 Koninklijke Philips N.V. (see LICENSE file).
 Source: https://github.com/Charterhouse/qaptools
 
