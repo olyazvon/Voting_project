@@ -5,7 +5,6 @@
 
 import sys
 from pysnark.runtime import PrivVal, PubVal
-from phe import paillier
 
 with open('paillier_public_key.txt') as f:
     n = int(f.read())
