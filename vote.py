@@ -1,5 +1,5 @@
 # THE MAIN VOTING SCRIPT
-# run from terminal(console)
+# When using pyCharm, run in the terminal!
 
 import getpass
 import cx_Oracle
@@ -15,14 +15,10 @@ MAX_VOTERS = 10000
 SALT_FILE = 'salt.txt'
 PAILLIER_PUB_KEY_FILE = 'paillier_public_key.txt'
 
-# TODO : удалить перед сдачей:
-# username = 'election_admin'
-# password = '123'
-
-
 # Functions
 
 def readFile(filename):
+	# Read a file (exit in case of error)
 	try:
 		with open(filename, encoding='utf-8') as file:
 				contents = file.read()
@@ -32,12 +28,14 @@ def readFile(filename):
 			exit(1)
 
 def getID(phrase):
+	# Get a valid ID from keyboard
 	voterID = input(phrase)
 	while (not voterID.isdigit) or len(voterID) != 9:
 		voterID = input("This field must consist of 9 digits. Try again: ")
 	return(voterID)
 
 def getName(phrase):
+	# Get a valid name or surname from keyboard
 	voterName = input(phrase)
 	tmp = voterName.replace(' ', '').replace('-', '')
 	while (not tmp.isalpha()) or len(tmp) == 0:
@@ -46,6 +44,7 @@ def getName(phrase):
 	return(voterName)
 
 def voterCheckQuery(hashkey, thisCenter, connection):
+	# Check if the voter can vote, return a tuple of bool and str reason
 	cursor = connection.cursor()
 	checkResult = cursor.execute(
 		'''SELECT tallyCenter, DECODE(vote, NULL, 0, 1) AS voted
@@ -61,6 +60,7 @@ def voterCheckQuery(hashkey, thisCenter, connection):
 	return True, 'You can vote here and now'
 
 def voteQuery(hashkey, vote, connection):
+	# Send a vote to DB
 	cursor = connection.cursor()
 	cursor.execute(
 		'''UPDATE Voters
@@ -71,6 +71,7 @@ def voteQuery(hashkey, vote, connection):
 
 
 def checkVoteInDbQuery(hashkey, vote, connection):
+	# Check if the vote in DB
 	cursor = connection.cursor()
 	checkResult = cursor.execute(
 		'''SELECT * FROM Voters
@@ -79,6 +80,7 @@ def checkVoteInDbQuery(hashkey, vote, connection):
 	return False if checkResult == None else True
 
 def paillier_encrypt(data):
+	# Encrypt data with paillier encryption
 	obf = SystemRandom().randrange(1, 150)
 	result = paillier_public_key.raw_encrypt(data, r_value=obf)
 	return str(result)
@@ -87,10 +89,8 @@ def clearConsole():
 	# cls for Windows, clear for Unix
 	os_system('cls' if os_name == 'nt' else 'clear')
 
-
-
-# Database connection
 def main():
+	# Logging in and the main cycle
 	username = input("Input admin username: ")
 	password = getpass.getpass(prompt="Input admin password: ")
 
@@ -98,10 +98,11 @@ def main():
 		dsn='localhost/xe') as connection:
 		print("You are logged in!")
 		centerNumber = int(input("Enter the tally center number: "))
-		# Main loop
+		# Reception loop
 		while True:
 			clearConsole()
 			print(f"Hello! Welcome to tally center No. {centerNumber}")
+
 			# Ask for name, surname, ID
 			voterName = getName("Enter voter's name: ").encode()
 			voterSurname = getName("Enter voter's surname: ").encode()
@@ -110,30 +111,28 @@ def main():
 			hashkey = scrypt(voterName+voterSurname+voterID,
 				salt=salt.encode(), n=16384, r=8, p=1)
 
-			# SQL request
+			# Check if the voter can vote
 			canVote, reason = voterCheckQuery(hashkey, centerNumber, connection)
-
-			# Print response, try again
+			# Print response, try again in case of fail
 			print(reason)
 			if not canVote:
 				print('You can try again in 5 seconds...')
 				sleep(5)
 				continue
 
-			# Vote cycle
+			# Voting loop
 			vote = input("You are voting now! Type D or R and press Enter: ")
 			while vote not in ('D','R'):
 				vote = input('Wrong character, try again. Type D or R and press Enter: ')
-
+			# Convert the vote to a numeric value
 			if vote == 'D':
 				vote = MAX_VOTERS
 			if vote == 'R':
 				vote = 1
 
-			# Encrypt with paillier
+			# Encrypt the vote with paillier
 			encryptedVote = paillier_encrypt(vote)
-
-			# SQL request
+			# Send the vote to DB
 			voteQuery(hashkey, encryptedVote, connection)
 
 			# Check is the vote saved correctly
@@ -147,11 +146,13 @@ def main():
 
 # Main flow
 
+# Read the crucial files, get salt and paillier public key
 salt = readFile(SALT_FILE)
-
 n = int(readFile(PAILLIER_PUB_KEY_FILE))
 paillier_public_key = paillier.PaillierPublicKey(n)
 
+
+# Run main repatedly, if log in failed
 while True:
 	try:
 		main()

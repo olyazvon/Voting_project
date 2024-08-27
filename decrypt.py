@@ -1,3 +1,8 @@
+# AUXILIARY DECRYPTION FILE
+# This file should be run only by other scripts.
+# The contents of this file are modified code from the phe library by CSIRO Data61:
+#https://github.com/data61/python-paillier
+
 import sys
 from pysnark.runtime import PrivVal, PubVal
 from phe import paillier
